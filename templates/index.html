@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SaaS Page Generator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0f;
+      --surface: #13131a;
+      --border: #1f1f2e;
+      --text: #c8c8d4;
+      --text-muted: #6b6b80;
+      --accent: #e8c469;
+      --accent-dim: #c9a44e22;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Input Screen ── */
+    .input-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 2rem;
+      background:
+        radial-gradient(ellipse 60% 40% at 50% 0%, #1a1428 0%, transparent 70%),
+        radial-gradient(circle at 80% 80%, #0f1a1a 0%, transparent 50%),
+        var(--bg);
+    }
+
+    .input-screen h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 3rem;
+      font-weight: 800;
+      margin-bottom: .4rem;
+      color: var(--accent);
+      letter-spacing: -0.02em;
+    }
+
+    .input-screen .sub {
+      color: var(--text-muted);
+      margin-bottom: 2.5rem;
+      text-align: center;
+      max-width: 480px;
+      line-height: 1.6;
+    }
+
+    .form-input, .form-textarea {
+      width: 100%;
+      max-width: 560px;
+      padding: 1rem 1.2rem;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: .95rem;
+      transition: border-color .2s, box-shadow .2s;
+    }
+
+    .form-input { margin-bottom: 1rem; }
+    .form-textarea { min-height: 130px; resize: vertical; }
+
+    .form-input:focus, .form-textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-dim);
+    }
+
+    .input-label {
+      width: 100%;
+      max-width: 560px;
+      font-size: .78rem;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: var(--text-muted);
+      margin-bottom: .5rem;
+      font-weight: 700;
+    }
+
+    .form-input + .input-label { margin-top: .2rem; }
+
+    .generate-btn {
+      margin-top: 1.6rem;
+      padding: .9rem 3rem;
+      border: none;
+      border-radius: 8px;
+      background: var(--accent);
+      color: #0a0a0f;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: .02em;
+      transition: transform .15s, box-shadow .15s;
+    }
+    .generate-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px #e8c46944;
+    }
+    .generate-btn:disabled {
+      opacity: .4;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* ── Loading Screen ── */
+    .loading-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background:
+        radial-gradient(ellipse 60% 40% at 50% 0%, #1a1428 0%, transparent 70%),
+        var(--bg);
+    }
+
+    .spinner {
+      width: 44px; height: 44px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading-screen .status-text { margin-top: 1.2rem; color: var(--text-muted); font-size: .92rem; }
+    .loading-screen .progress-text { margin-top: .5rem; color: var(--accent); font-size: .82rem; font-weight: 600; }
+
+    /* ── Variation Picker ── */
+    .picker-screen {
+      min-height: 100vh;
+      background:
+        radial-gradient(ellipse 60% 40% at 50% 0%, #1a1428 0%, transparent 70%),
+        var(--bg);
+      padding: 2rem;
+    }
+
+    .picker-header {
+      text-align: center;
+      padding: 2rem 0 1rem;
+    }
+
+    .picker-header h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem;
+      color: var(--accent);
+      margin-bottom: .4rem;
+    }
+
+    .picker-header p {
+      color: var(--text-muted);
+      font-size: .95rem;
+    }
+
+    .variation-labels {
+      display: flex;
+      justify-content: center;
+      gap: .6rem;
+      margin: 1.5rem auto .8rem;
+      max-width: 1400px;
+      padding: 0 1rem;
+    }
+
+    .variation-label {
+      flex: 1;
+      max-width: 440px;
+      text-align: center;
+      font-size: .75rem;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: var(--text-muted);
+      font-weight: 700;
+    }
+
+    .variations-row {
+      display: flex;
+      gap: .6rem;
+      justify-content: center;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 1rem;
+    }
+
+    .variation-card {
+      flex: 1;
+      max-width: 440px;
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: border-color .2s, transform .2s, box-shadow .2s;
+      background: var(--surface);
+    }
+
+    .variation-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-4px);
+      box-shadow: 0 12px 32px rgba(0,0,0,.4);
+    }
+
+    .variation-card.selected {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px var(--accent), 0 12px 32px rgba(0,0,0,.4);
+    }
+
+    .variation-preview {
+      width: 100%;
+      height: 380px;
+      border: none;
+      pointer-events: none;
+      display: block;
+      background: #fff;
+    }
+
+    .variation-footer {
+      padding: .8rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid var(--border);
+    }
+
+    .variation-footer span {
+      font-size: .82rem;
+      color: var(--text-muted);
+    }
+
+    .select-badge {
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      font-weight: 700;
+      padding: .3rem .8rem;
+      border-radius: 4px;
+      background: var(--accent);
+      color: #0a0a0f;
+      opacity: 0;
+      transition: opacity .2s;
+    }
+
+    .variation-card.selected .select-badge,
+    .variation-card:hover .select-badge {
+      opacity: 1;
+    }
+
+    .picker-actions {
+      text-align: center;
+      padding: 1.5rem 0 3rem;
+    }
+
+    .picker-actions .generate-btn:disabled {
+      opacity: .3;
+    }
+
+    /* placeholder slots while loading */
+    .variation-card.placeholder {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 430px;
+      cursor: default;
+    }
+
+    .variation-card.placeholder:hover {
+      border-color: var(--border);
+      transform: none;
+      box-shadow: none;
+    }
+
+    .mini-spinner {
+      width: 28px; height: 28px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+
+    /* ── Output Screen ── */
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: .7rem 1.5rem;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+    .toolbar h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem;
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: var(--accent);
+    }
+    .toolbar-btn {
+      padding: .45rem 1.1rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--bg);
+      color: var(--text);
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      font-size: .82rem;
+    }
+    .toolbar-btn:hover { border-color: var(--accent); }
+
+    .tab-bar {
+      display: flex;
+      gap: 0;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+    }
+    .tab-btn {
+      padding: .6rem 1.4rem;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      font-size: .88rem;
+      border-bottom: 2px solid transparent;
+      white-space: nowrap;
+    }
+    .tab-btn.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    .page-frame { width: 100%; background: #fff; min-height: 100vh; }
+    .page-frame iframe { width: 100%; height: calc(100vh - 90px); border: none; display: block; }
+
+    /* ── Error ── */
+    .error-box {
+      max-width: 560px;
+      margin-top: 1rem;
+      padding: 1rem 1.2rem;
+      background: #1a1015;
+      border: 1px solid #3d1c2a;
+      border-radius: 8px;
+      color: #e87a7a;
+      font-size: .88rem;
+      line-height: 1.5;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <!-- Input Screen -->
+    <div v-if="screen === 'input'" class="input-screen">
+      <h1>SaaS Page Generator</h1>
+      <p class="sub">Describe your SaaS app idea and get production-ready page mockups — unique, beautifully designed, ready for screenshots.</p>
+
+      <div class="input-label">Anthropic API Key</div>
+      <input
+        v-model="apiKey"
+        class="form-input"
+        type="password"
+        placeholder="sk-ant-api03-…"
+        @keydown.enter="$refs.ideaInput.focus()"
+      />
+
+      <div class="input-label">Your SaaS Idea</div>
+      <textarea
+        ref="ideaInput"
+        v-model="idea"
+        class="form-textarea"
+        placeholder="e.g. An AI-powered veterinary clinic management platform that handles appointment scheduling, pet medical records, telemedicine consultations, and automated prescription refills..."
+      ></textarea>
+
+      <button class="generate-btn" :disabled="generating" @click="startGeneration">
+        Generate Pages
+      </button>
+
+      <div v-if="error" class="error-box">{{ error }}</div>
+    </div>
+
+    <!-- Loading Screen -->
+    <div v-if="screen === 'loading'" class="loading-screen">
+      <div class="spinner"></div>
+      <p class="status-text">{{ loadingText }}</p>
+      <p class="progress-text">{{ progressText }}</p>
+    </div>
+
+    <!-- Variation Picker -->
+    <div v-if="screen === 'picker'" class="picker-screen">
+      <div class="picker-header">
+        <h1>{{ appName }}</h1>
+        <p>Choose a design direction for your pages</p>
+      </div>
+
+      <div class="variation-labels">
+        <div class="variation-label" v-for="(label, i) in variationLabels" :key="i">{{ label }}</div>
+      </div>
+
+      <div class="variations-row">
+        <template v-for="i in 3" :key="i">
+          <!-- Loaded variation -->
+          <div
+            v-if="variations[i - 1]"
+            class="variation-card"
+            :class="{ selected: selectedVariation === i - 1 }"
+            @click="selectedVariation = i - 1"
+          >
+            <iframe
+              class="variation-preview"
+              :ref="el => setVariationRef(el, i - 1)"
+            ></iframe>
+            <div class="variation-footer">
+              <span>Variation {{ i }}</span>
+              <div class="select-badge">{{ selectedVariation === i - 1 ? 'Selected' : 'Select' }}</div>
+            </div>
+          </div>
+          <!-- Placeholder while loading -->
+          <div v-else class="variation-card placeholder">
+            <div class="mini-spinner"></div>
+          </div>
+        </template>
+      </div>
+
+      <div class="picker-actions">
+        <button
+          class="generate-btn"
+          :disabled="selectedVariation === null || generatingPages"
+          @click="confirmVariation"
+        >
+          {{ generatingPages ? 'Generating remaining pages…' : 'Use This Design' }}
+        </button>
+      </div>
+
+      <div v-if="error" class="error-box" style="max-width:1400px;margin:0 auto;">{{ error }}</div>
+    </div>
+
+    <!-- Output Screen -->
+    <div v-if="screen === 'output'">
+      <div class="toolbar">
+        <h2>{{ appName }} — Page Mockups</h2>
+        <button class="toolbar-btn" @click="reset">← New Idea</button>
+      </div>
+      <div class="tab-bar">
+        <button
+          v-for="(page, i) in pages"
+          :key="i"
+          class="tab-btn"
+          :class="{ active: currentPage === i }"
+          @click="showPage(i)"
+        >
+          {{ page.name }}
+        </button>
+      </div>
+      <div class="page-frame">
+        <iframe ref="pageIframe"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { createApp, ref, nextTick, watch } = Vue;
+
+    createApp({
+      setup() {
+        const screen = ref('input');
+        const apiKey = ref('');
+        const idea = ref('');
+        const error = ref('');
+        const generating = ref(false);
+        const generatingPages = ref(false);
+        const loadingText = ref('');
+        const progressText = ref('');
+
+        // Plan data
+        const appName = ref('');
+        const pageList = ref([]);
+
+        // Variation picker
+        const variations = ref([null, null, null]); // { aesthetics, html }
+        const selectedVariation = ref(null);
+        const variationLabels = ['Dark & Moody', 'Light & Editorial', 'Bold & Colorful'];
+        const variationIframeRefs = [ref(null), ref(null), ref(null)];
+
+        // Output
+        const pages = ref([]);
+        const currentPage = ref(0);
+        const pageIframe = ref(null);
+
+        function setVariationRef(el, index) {
+          variationIframeRefs[index].value = el;
+          if (el && variations.value[index]) {
+            nextTick(() => {
+              try {
+                const doc = el.contentDocument;
+                doc.open();
+                doc.write(variations.value[index].html);
+                doc.close();
+              } catch (e) { /* cross-origin safety */ }
+            });
+          }
+        }
+
+        async function readNDJSON(response, handler) {
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = '';
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop();
+
+            for (const line of lines) {
+              if (!line.trim()) continue;
+              const event = JSON.parse(line);
+              if (event.step === 'error') throw new Error(event.message);
+              handler(event);
+            }
+          }
+        }
+
+        async function startGeneration() {
+          error.value = '';
+          if (!apiKey.value.trim()) { error.value = 'Please enter your Anthropic API key.'; return; }
+          if (!idea.value.trim()) { error.value = 'Please describe your SaaS idea.'; return; }
+
+          generating.value = true;
+          screen.value = 'loading';
+          loadingText.value = 'Planning your app…';
+          progressText.value = '';
+          variations.value = [null, null, null];
+          selectedVariation.value = null;
+
+          try {
+            const res = await fetch('/api/variations', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ apiKey: apiKey.value.trim(), idea: idea.value.trim() }),
+            });
+
+            if (!res.ok) {
+              const errData = await res.json().catch(() => ({}));
+              throw new Error(errData.error || `Server error ${res.status}`);
+            }
+
+            let variationsReceived = 0;
+
+            await readNDJSON(res, (event) => {
+              switch (event.step) {
+                case 'planning':
+                  loadingText.value = event.message;
+                  break;
+
+                case 'plan_ready':
+                  appName.value = event.appName;
+                  pageList.value = event.pages;
+                  break;
+
+                case 'generating_variations':
+                  loadingText.value = event.message;
+                  progressText.value = '3 design directions being created in parallel';
+                  break;
+
+                case 'variation_ready':
+                  variations.value[event.index] = {
+                    aesthetics: event.aesthetics,
+                    html: event.html,
+                  };
+                  // Force reactivity
+                  variations.value = [...variations.value];
+                  variationsReceived++;
+                  progressText.value = `${variationsReceived} of 3 variations ready`;
+
+                  // Switch to picker as soon as first variation arrives
+                  if (variationsReceived === 1) {
+                    screen.value = 'picker';
+                  }
+                  break;
+
+                case 'variations_done':
+                  // All done, user can pick
+                  break;
+              }
+            });
+
+          } catch (e) {
+            screen.value = 'input';
+            error.value = e.message;
+          } finally {
+            generating.value = false;
+          }
+        }
+
+        async function confirmVariation() {
+          if (selectedVariation.value === null) return;
+
+          const chosen = variations.value[selectedVariation.value];
+          if (!chosen) return;
+
+          error.value = '';
+          generatingPages.value = true;
+
+          // Start with landing page already in place
+          pages.value = [{ name: 'Landing Page', html: chosen.html }];
+
+          try {
+            const res = await fetch('/api/generate-pages', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                apiKey: apiKey.value.trim(),
+                idea: idea.value.trim(),
+                appName: appName.value,
+                aesthetics: chosen.aesthetics,
+                pages: pageList.value,
+              }),
+            });
+
+            if (!res.ok) {
+              const errData = await res.json().catch(() => ({}));
+              throw new Error(errData.error || `Server error ${res.status}`);
+            }
+
+            // Switch to output screen immediately with landing page visible
+            screen.value = 'output';
+            currentPage.value = 0;
+            await nextTick();
+            writeIframe(0);
+
+            await readNDJSON(res, async (event) => {
+              switch (event.step) {
+                case 'page_ready':
+                  pages.value.push({ name: event.pageName, html: event.html });
+                  break;
+                case 'done':
+                  break;
+              }
+            });
+
+          } catch (e) {
+            error.value = e.message;
+            if (screen.value !== 'output') {
+              // Stay on picker if we haven't transitioned
+            }
+          } finally {
+            generatingPages.value = false;
+          }
+        }
+
+        function writeIframe(index) {
+          const iframe = pageIframe.value;
+          if (!iframe || !pages.value[index]) return;
+          const doc = iframe.contentDocument;
+          doc.open();
+          doc.write(pages.value[index].html);
+          doc.close();
+        }
+
+        async function showPage(index) {
+          currentPage.value = index;
+          await nextTick();
+          writeIframe(index);
+        }
+
+        function reset() {
+          screen.value = 'input';
+          pages.value = [];
+          currentPage.value = 0;
+          appName.value = '';
+          pageList.value = [];
+          variations.value = [null, null, null];
+          selectedVariation.value = null;
+          error.value = '';
+          generatingPages.value = false;
+        }
+
+        return {
+          screen, apiKey, idea, error, generating, generatingPages,
+          loadingText, progressText,
+          appName, pageList,
+          variations, selectedVariation, variationLabels,
+          setVariationRef,
+          pages, currentPage, pageIframe,
+          startGeneration, confirmVariation, showPage, reset,
+        };
+      },
+    }).mount('#app');
+  </script>
+</body>
+</html>
