@@ -4,40 +4,216 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SaaS Page Generator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+
+    :root {
+      --bg: #0a0a0f;
+      --surface: #13131a;
+      --border: #1f1f2e;
+      --text: #c8c8d4;
+      --text-muted: #6b6b80;
+      --accent: #e8c469;
+      --accent-dim: #c9a44e22;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
 
     /* ── Input Screen ── */
-    #input-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem; }
-    #input-screen h1 { font-size: 2.4rem; margin-bottom: .5rem; background: linear-gradient(135deg, #818cf8, #c084fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    #input-screen p.sub { color: #94a3b8; margin-bottom: 2rem; text-align: center; max-width: 480px; }
-    #idea-input { width: 100%; max-width: 560px; min-height: 120px; padding: 1rem; border-radius: 12px; border: 1px solid #334155; background: #1e293b; color: #f1f5f9; font-size: 1rem; resize: vertical; }
-    #idea-input:focus { outline: none; border-color: #818cf8; box-shadow: 0 0 0 3px rgba(129,140,248,.25); }
-    #generate-btn { margin-top: 1.2rem; padding: .85rem 2.4rem; border: none; border-radius: 10px; background: linear-gradient(135deg, #6366f1, #a855f7); color: #fff; font-size: 1.05rem; font-weight: 600; cursor: pointer; transition: transform .15s, box-shadow .15s; }
-    #generate-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(99,102,241,.4); }
-    #generate-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; box-shadow: none; }
+    #input-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 2rem;
+      background:
+        radial-gradient(ellipse 60% 40% at 50% 0%, #1a1428 0%, transparent 70%),
+        radial-gradient(circle at 80% 80%, #0f1a1a 0%, transparent 50%),
+        var(--bg);
+    }
+
+    #input-screen h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 3rem;
+      font-weight: 800;
+      margin-bottom: .4rem;
+      color: var(--accent);
+      letter-spacing: -0.02em;
+    }
+
+    #input-screen p.sub {
+      color: var(--text-muted);
+      margin-bottom: 2.5rem;
+      text-align: center;
+      max-width: 480px;
+      line-height: 1.6;
+    }
+
+    #api-key-input, #idea-input {
+      width: 100%;
+      max-width: 560px;
+      padding: 1rem 1.2rem;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: .95rem;
+      transition: border-color .2s, box-shadow .2s;
+    }
+
+    #api-key-input { margin-bottom: 1rem; }
+    #idea-input { min-height: 130px; resize: vertical; }
+
+    #api-key-input:focus, #idea-input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-dim);
+    }
+
+    .input-label {
+      width: 100%;
+      max-width: 560px;
+      font-size: .78rem;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: var(--text-muted);
+      margin-bottom: .5rem;
+      font-weight: 700;
+    }
+
+    .input-label:not(:first-of-type) { margin-top: 1.2rem; }
+
+    #generate-btn {
+      margin-top: 1.6rem;
+      padding: .9rem 3rem;
+      border: none;
+      border-radius: 8px;
+      background: var(--accent);
+      color: #0a0a0f;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: .02em;
+      transition: transform .15s, box-shadow .15s;
+    }
+    #generate-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px #e8c46944;
+    }
+    #generate-btn:disabled {
+      opacity: .4;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
 
     /* ── Output Screen ── */
     #output-screen { display: none; }
-    .toolbar { position: sticky; top: 0; z-index: 100; display: flex; align-items: center; gap: 1rem; padding: .75rem 1.5rem; background: #1e293b; border-bottom: 1px solid #334155; }
-    .toolbar h2 { font-size: 1rem; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .toolbar button { padding: .5rem 1.2rem; border: 1px solid #334155; border-radius: 8px; background: #0f172a; color: #e2e8f0; cursor: pointer; font-size: .85rem; }
-    .toolbar button:hover { border-color: #818cf8; }
-    .toolbar button.active { background: #6366f1; border-color: #6366f1; color: #fff; }
 
-    .tab-bar { display: flex; gap: 0; background: #1e293b; border-bottom: 1px solid #334155; overflow-x: auto; }
-    .tab-bar button { padding: .65rem 1.4rem; border: none; background: transparent; color: #94a3b8; cursor: pointer; font-size: .9rem; border-bottom: 2px solid transparent; white-space: nowrap; }
-    .tab-bar button.active { color: #818cf8; border-bottom-color: #818cf8; }
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: .7rem 1.5rem;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+    .toolbar h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem;
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: var(--accent);
+    }
+    .toolbar button {
+      padding: .45rem 1.1rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--bg);
+      color: var(--text);
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      font-size: .82rem;
+    }
+    .toolbar button:hover { border-color: var(--accent); }
+
+    .tab-bar {
+      display: flex;
+      gap: 0;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+    }
+    .tab-bar button {
+      padding: .6rem 1.4rem;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      font-size: .88rem;
+      border-bottom: 2px solid transparent;
+      white-space: nowrap;
+    }
+    .tab-bar button.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
 
     .page-frame { width: 100%; background: #fff; min-height: 100vh; }
-    .page-frame iframe { width: 100%; height: calc(100vh - 96px); border: none; display: block; }
+    .page-frame iframe { width: 100%; height: calc(100vh - 90px); border: none; display: block; }
 
     /* ── Loading ── */
-    #loading { display: none; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; }
-    .spinner { width: 48px; height: 48px; border: 4px solid #334155; border-top-color: #818cf8; border-radius: 50%; animation: spin .8s linear infinite; }
+    #loading {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background:
+        radial-gradient(ellipse 60% 40% at 50% 0%, #1a1428 0%, transparent 70%),
+        var(--bg);
+    }
+    .spinner {
+      width: 44px; height: 44px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
     @keyframes spin { to { transform: rotate(360deg); } }
-    #loading p { margin-top: 1rem; color: #94a3b8; }
+    #loading p { margin-top: 1.2rem; color: var(--text-muted); font-size: .92rem; }
+    #loading .page-progress { margin-top: .5rem; color: var(--accent); font-size: .82rem; font-weight: 600; }
+
+    /* ── Error ── */
+    #error-box {
+      display: none;
+      max-width: 560px;
+      margin-top: 1rem;
+      padding: 1rem 1.2rem;
+      background: #1a1015;
+      border: 1px solid #3d1c2a;
+      border-radius: 8px;
+      color: #e87a7a;
+      font-size: .88rem;
+      line-height: 1.5;
+      width: 100%;
+    }
   </style>
 </head>
 <body>
@@ -45,15 +221,23 @@
 <!-- Input -->
 <div id="input-screen">
   <h1>SaaS Page Generator</h1>
-  <p class="sub">Describe your SaaS app idea and get production-ready page mockups perfect for screenshots.</p>
-  <textarea id="idea-input" placeholder="e.g. An AI-powered project management tool for remote teams that tracks time, manages sprints, and provides burndown charts..."></textarea>
+  <p class="sub">Describe your SaaS app idea and get production-ready page mockups — unique, beautifully designed, ready for screenshots.</p>
+
+  <div class="input-label">Anthropic API Key</div>
+  <input id="api-key-input" type="password" placeholder="sk-ant-api03-…" />
+
+  <div class="input-label">Your SaaS Idea</div>
+  <textarea id="idea-input" placeholder="e.g. An AI-powered veterinary clinic management platform that handles appointment scheduling, pet medical records, telemedicine consultations, and automated prescription refills..."></textarea>
+
   <button id="generate-btn" onclick="generate()">Generate Pages</button>
+  <div id="error-box"></div>
 </div>
 
 <!-- Loading -->
 <div id="loading">
   <div class="spinner"></div>
-  <p id="loading-text">Generating pages…</p>
+  <p id="loading-text">Analyzing your idea…</p>
+  <div class="page-progress" id="page-progress"></div>
 </div>
 
 <!-- Output -->
@@ -67,503 +251,189 @@
 </div>
 
 <script>
-// ── Helpers ──
-function extractAppName(idea) {
-  const words = idea.trim().split(/\s+/).slice(0, 5);
-  // Try to find a short catchy name
-  const prefixes = ['Nova','Pulse','Flow','Craft','Sync','Wave','Beam','Core','Loop','Dash','Hive','Apex','Bolt','Edge','Peak','Rise','Flux','Grid','Link','Nest'];
-  const suffixes = ['ly','ify','io','hub','base','kit','lab','pad','box','stack','spot','dock','point','forge','zone'];
-  const seed = idea.length;
-  return prefixes[seed % prefixes.length] + suffixes[(seed * 3) % suffixes.length];
-}
+const AESTHETICS_PROMPT = `You tend to converge toward generic, "on distribution" outputs. In frontend design, this creates what users call the "AI slop" aesthetic. Avoid this: make creative, distinctive frontends that surprise and delight. Focus on:
 
-function extractColor(idea) {
-  const colors = [
-    { primary: '#6366f1', gradient: 'linear-gradient(135deg,#6366f1,#a855f7)', light: '#eef2ff', name: 'indigo' },
-    { primary: '#3b82f6', gradient: 'linear-gradient(135deg,#3b82f6,#06b6d4)', light: '#eff6ff', name: 'blue' },
-    { primary: '#10b981', gradient: 'linear-gradient(135deg,#10b981,#34d399)', light: '#ecfdf5', name: 'green' },
-    { primary: '#f59e0b', gradient: 'linear-gradient(135deg,#f59e0b,#f97316)', light: '#fffbeb', name: 'amber' },
-    { primary: '#ef4444', gradient: 'linear-gradient(135deg,#ef4444,#f97316)', light: '#fef2f2', name: 'red' },
-    { primary: '#8b5cf6', gradient: 'linear-gradient(135deg,#8b5cf6,#ec4899)', light: '#f5f3ff', name: 'violet' },
-    { primary: '#0ea5e9', gradient: 'linear-gradient(135deg,#0ea5e9,#6366f1)', light: '#f0f9ff', name: 'sky' },
-    { primary: '#14b8a6', gradient: 'linear-gradient(135deg,#14b8a6,#0ea5e9)', light: '#f0fdfa', name: 'teal' },
-  ];
-  return colors[idea.length % colors.length];
-}
+Typography: Choose fonts that are beautiful, unique, and interesting. Use Google Fonts imports. Avoid generic fonts like Arial, Inter, Roboto; opt instead for distinctive choices that elevate the frontend's aesthetics.
 
-function extractFeatures(idea) {
-  const text = idea.toLowerCase();
-  const featureMap = [
-    { kw: ['track','monitor','analytic','metric','report','data','insight','chart','graph','dashboard'], feat: 'Real-time Analytics Dashboard' },
-    { kw: ['team','collaborat','share','workspace','member','group','organization'], feat: 'Team Collaboration' },
-    { kw: ['ai','intellig','smart','automat','machine','predict','suggest'], feat: 'AI-Powered Automation' },
-    { kw: ['project','task','manage','plan','sprint','kanban','board','workflow'], feat: 'Project Management' },
-    { kw: ['time','schedule','calendar','deadline','remind'], feat: 'Time Tracking & Scheduling' },
-    { kw: ['integrat','connect','api','sync','import','export','webhook'], feat: 'Seamless Integrations' },
-    { kw: ['secure','encrypt','privacy','auth','permission','role','access'], feat: 'Enterprise Security' },
-    { kw: ['custom','personal','configur','template','theme','brand'], feat: 'Customizable Workflows' },
-    { kw: ['notif','alert','email','message','chat','communicat'], feat: 'Smart Notifications' },
-    { kw: ['file','document','storage','upload','cloud','backup'], feat: 'Cloud Storage & Documents' },
-    { kw: ['invoice','bill','pay','subscri','revenue','financ','price'], feat: 'Billing & Invoicing' },
-    { kw: ['customer','client','crm','lead','contact','support','ticket'], feat: 'Customer Management' },
-  ];
-  const found = [];
-  for (const f of featureMap) {
-    if (f.kw.some(k => text.includes(k))) found.push(f.feat);
-  }
-  // Always include some defaults
-  const defaults = ['Real-time Analytics Dashboard', 'Team Collaboration', 'AI-Powered Automation', 'Seamless Integrations', 'Enterprise Security', 'Customizable Workflows'];
-  for (const d of defaults) {
-    if (!found.includes(d)) found.push(d);
-    if (found.length >= 6) break;
-  }
-  return found.slice(0, 6);
-}
+Color & Theme: Commit to a cohesive aesthetic. Use CSS variables for consistency. Dominant colors with sharp accents outperform timid, evenly-distributed palettes. Draw from IDE themes and cultural aesthetics for inspiration.
 
-function extractDescription(idea) {
-  if (idea.length > 60) return idea.charAt(0).toUpperCase() + idea.slice(1, 120).trim() + (idea.length > 120 ? '…' : '');
-  return `The all-in-one platform to ${idea.toLowerCase().replace(/^(an?|the)\s+/i, '')}`;
-}
+Motion: Use CSS animations for effects and micro-interactions. Focus on high-impact moments: one well-orchestrated page load with staggered reveals (animation-delay) creates more delight than scattered micro-interactions.
 
-// ── Page Generators ──
+Backgrounds: Create atmosphere and depth rather than defaulting to solid colors. Layer CSS gradients, use geometric patterns, or add contextual effects that match the overall aesthetic.
 
-function generateLandingPage(ctx) {
-  return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;color:#1e293b;background:#fff;overflow-x:hidden}
-nav{display:flex;align-items:center;justify-content:space-between;padding:1rem 4%;max-width:1200px;margin:0 auto}
-nav .logo{font-size:1.4rem;font-weight:800;color:${ctx.color.primary}}
-nav ul{display:flex;gap:2rem;list-style:none}
-nav ul a{text-decoration:none;color:#475569;font-weight:500;font-size:.95rem}
-nav .cta-nav{padding:.55rem 1.4rem;background:${ctx.color.primary};color:#fff;border-radius:8px;text-decoration:none;font-weight:600;font-size:.9rem}
-.hero{text-align:center;padding:5rem 4% 4rem;max-width:800px;margin:0 auto}
-.hero .badge{display:inline-block;padding:.35rem 1rem;background:${ctx.color.light};color:${ctx.color.primary};border-radius:50px;font-size:.85rem;font-weight:600;margin-bottom:1.5rem}
-.hero h1{font-size:3.2rem;font-weight:800;line-height:1.15;margin-bottom:1.2rem;letter-spacing:-.02em}
-.hero h1 span{background:${ctx.color.gradient};-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.hero p{font-size:1.2rem;color:#64748b;line-height:1.6;margin-bottom:2rem;max-width:600px;margin-left:auto;margin-right:auto}
-.hero-buttons{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap}
-.hero-buttons a{padding:.85rem 2rem;border-radius:10px;font-weight:600;font-size:1rem;text-decoration:none;transition:transform .15s}
-.btn-primary{background:${ctx.color.gradient};color:#fff;box-shadow:0 4px 15px ${ctx.color.primary}44}
-.btn-secondary{border:2px solid #e2e8f0;color:#475569}
-.hero-image{margin:3rem auto 0;max-width:900px;height:420px;background:${ctx.color.gradient};border-radius:16px;box-shadow:0 25px 60px rgba(0,0,0,.15);position:relative;overflow:hidden}
-.hero-image::after{content:'';position:absolute;inset:16px;background:#fff;border-radius:10px;opacity:.95}
-.hero-image .mock-ui{position:absolute;inset:16px;background:#fff;border-radius:10px;z-index:1;padding:1rem}
-.mock-sidebar{position:absolute;left:0;top:0;bottom:0;width:200px;background:#f8fafc;border-right:1px solid #e2e8f0;border-radius:10px 0 0 10px;padding:1.5rem 1rem}
-.mock-sidebar .mock-item{height:12px;background:#e2e8f0;border-radius:4px;margin-bottom:.8rem;width:80%}
-.mock-sidebar .mock-item:first-child{width:60%;background:${ctx.color.primary};opacity:.3}
-.mock-content{position:absolute;left:200px;top:0;right:0;bottom:0;padding:1.5rem}
-.mock-header-bar{height:14px;background:#f1f5f9;border-radius:4px;width:40%;margin-bottom:1.5rem}
-.mock-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
-.mock-card{background:#f8fafc;border-radius:8px;padding:1rem;border:1px solid #e2e8f0}
-.mock-card .mc-top{height:8px;background:${ctx.color.primary};opacity:.2;border-radius:3px;width:50%;margin-bottom:.6rem}
-.mock-card .mc-big{font-size:1.5rem;font-weight:700;color:${ctx.color.primary};margin-bottom:.4rem}
-.mock-card .mc-line{height:6px;background:#e2e8f0;border-radius:3px;margin-bottom:.4rem}
-.mock-chart{grid-column:span 2;display:flex;align-items:flex-end;gap:6px;padding-top:2rem}
-.mock-chart .bar{flex:1;background:${ctx.color.gradient};border-radius:4px 4px 0 0;opacity:.6}
+Avoid generic AI-generated aesthetics:
+- Overused font families (Inter, Roboto, Arial, system fonts, Space Grotesk)
+- Clichéd color schemes (particularly purple gradients on white backgrounds)
+- Predictable layouts and component patterns
+- Cookie-cutter design that lacks context-specific character
 
-.features{padding:5rem 4%;max-width:1100px;margin:0 auto}
-.features h2{text-align:center;font-size:2.2rem;font-weight:800;margin-bottom:.8rem}
-.features .feat-sub{text-align:center;color:#64748b;margin-bottom:3rem;font-size:1.05rem}
-.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2rem}
-.feat-card{padding:2rem;border-radius:14px;border:1px solid #e2e8f0;transition:box-shadow .2s,transform .2s}
-.feat-card:hover{box-shadow:0 10px 30px rgba(0,0,0,.06);transform:translateY(-3px)}
-.feat-icon{width:48px;height:48px;background:${ctx.color.light};border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:1rem;font-size:1.4rem}
-.feat-card h3{font-size:1.1rem;margin-bottom:.5rem}
-.feat-card p{color:#64748b;font-size:.92rem;line-height:1.6}
+Interpret creatively and make unexpected choices that feel genuinely designed for the context. Vary between light and dark themes, different fonts, different aesthetics. Think outside the box!`;
 
-.social-proof{padding:4rem 4%;background:#f8fafc;text-align:center}
-.social-proof h2{font-size:1.8rem;font-weight:700;margin-bottom:2.5rem}
-.logos{display:flex;gap:3rem;justify-content:center;align-items:center;flex-wrap:wrap;opacity:.4}
-.logos span{font-size:1.3rem;font-weight:700;color:#475569}
+const SYSTEM_PROMPT = `You are an expert frontend designer who creates production-ready HTML/CSS page mockups for SaaS applications. Your pages are meant to be used as screenshot material — they must look polished, realistic, and visually striking.
 
-.cta-section{padding:5rem 4%;text-align:center}
-.cta-box{max-width:700px;margin:0 auto;padding:3.5rem;background:${ctx.color.gradient};border-radius:20px;color:#fff}
-.cta-box h2{font-size:2rem;margin-bottom:1rem}
-.cta-box p{opacity:.85;margin-bottom:2rem;font-size:1.05rem}
-.cta-box a{display:inline-block;padding:.85rem 2.4rem;background:#fff;color:${ctx.color.primary};border-radius:10px;font-weight:700;text-decoration:none;font-size:1rem}
+${AESTHETICS_PROMPT}
 
-footer{padding:2rem 4%;text-align:center;color:#94a3b8;font-size:.85rem;border-top:1px solid #e2e8f0}
-</style></head><body>
-<nav>
-  <div class="logo">${ctx.name}</div>
-  <ul><li><a href="#">Features</a></li><li><a href="#">Pricing</a></li><li><a href="#">About</a></li></ul>
-  <a href="#" class="cta-nav">Get Started</a>
-</nav>
-<section class="hero">
-  <div class="badge">✨ Now in Public Beta</div>
-  <h1>Supercharge Your Workflow with <span>${ctx.name}</span></h1>
-  <p>${ctx.description}</p>
-  <div class="hero-buttons">
-    <a href="#" class="btn-primary">Start Free Trial</a>
-    <a href="#" class="btn-secondary">Watch Demo →</a>
-  </div>
-  <div class="hero-image">
-    <div class="mock-ui">
-      <div class="mock-sidebar">${'<div class="mock-item"></div>'.repeat(6)}</div>
-      <div class="mock-content">
-        <div class="mock-header-bar"></div>
-        <div class="mock-cards">
-          <div class="mock-card"><div class="mc-top"></div><div class="mc-big">2,847</div><div class="mc-line" style="width:70%"></div></div>
-          <div class="mock-card"><div class="mc-top"></div><div class="mc-big">94.2%</div><div class="mc-line" style="width:85%"></div></div>
-          <div class="mock-card"><div class="mc-top"></div><div class="mc-big">$48.5k</div><div class="mc-line" style="width:60%"></div></div>
-          <div class="mock-chart">${[65,45,80,55,90,70,85,50,75,95,60,88].map(h=>`<div class="bar" style="height:${h}%"></div>`).join('')}</div>
-          <div class="mock-card"><div class="mc-top"></div><div class="mc-line" style="width:90%"></div><div class="mc-line" style="width:65%"></div><div class="mc-line" style="width:80%"></div></div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-<section class="features">
-  <h2>Everything you need to succeed</h2>
-  <p class="feat-sub">Powerful features designed to help your team move faster.</p>
-  <div class="feat-grid">
-    ${ctx.features.map((f, i) => {
-      const icons = ['📊','👥','🤖','🔗','🔒','⚡'];
-      return `<div class="feat-card"><div class="feat-icon">${icons[i] || '✨'}</div><h3>${f}</h3><p>Streamline your workflow with powerful tools built for modern teams and businesses.</p></div>`;
-    }).join('')}
-  </div>
-</section>
-<section class="social-proof">
-  <h2>Trusted by 2,000+ teams worldwide</h2>
-  <div class="logos"><span>Acme Corp</span><span>GlobalTech</span><span>Initech</span><span>Umbrella Co</span><span>Stark Ind</span><span>Wayne Ent</span></div>
-</section>
-<section class="cta-section">
-  <div class="cta-box">
-    <h2>Ready to get started?</h2>
-    <p>Join thousands of teams already using ${ctx.name} to boost productivity.</p>
-    <a href="#">Start Your Free Trial</a>
-  </div>
-</section>
-<footer>© 2026 ${ctx.name}. All rights reserved.</footer>
-</body></html>`;
-}
+CRITICAL RULES:
+1. Return ONLY the raw HTML. No markdown, no code fences, no explanation.
+2. Each page must be a complete standalone HTML document with embedded CSS and Google Fonts imports.
+3. Use realistic placeholder data (names, numbers, dates, etc.) that matches the SaaS context.
+4. Pages are static visual mockups — no JavaScript needed, no functionality.
+5. Make the design feel like a real product, not a template.
+6. Every page for the SAME app must share a consistent design language (same fonts, colors, spacing conventions) while being contextually different.`;
 
-function generatePricingPage(ctx) {
-  return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;color:#1e293b;background:#fff}
-nav{display:flex;align-items:center;justify-content:space-between;padding:1rem 4%;max-width:1200px;margin:0 auto}
-nav .logo{font-size:1.4rem;font-weight:800;color:${ctx.color.primary}}
-nav ul{display:flex;gap:2rem;list-style:none}
-nav ul a{text-decoration:none;color:#475569;font-weight:500;font-size:.95rem}
-nav .cta-nav{padding:.55rem 1.4rem;background:${ctx.color.primary};color:#fff;border-radius:8px;text-decoration:none;font-weight:600;font-size:.9rem}
-.pricing-hero{text-align:center;padding:4rem 4% 1rem}
-.pricing-hero h1{font-size:2.8rem;font-weight:800;margin-bottom:.8rem}
-.pricing-hero h1 span{background:${ctx.color.gradient};-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.pricing-hero p{color:#64748b;font-size:1.1rem;max-width:500px;margin:0 auto 2rem}
-.toggle{display:flex;align-items:center;justify-content:center;gap:.8rem;margin-bottom:3rem}
-.toggle span{font-size:.95rem;color:#64748b}
-.toggle .active{color:#1e293b;font-weight:600}
-.toggle-switch{width:52px;height:28px;background:${ctx.color.primary};border-radius:50px;position:relative;cursor:pointer}
-.toggle-switch::after{content:'';position:absolute;width:22px;height:22px;background:#fff;border-radius:50%;top:3px;right:3px;transition:.2s}
-.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:2rem;max-width:1050px;margin:0 auto;padding:0 4% 5rem;align-items:start}
-.card{border:1px solid #e2e8f0;border-radius:16px;padding:2.5rem 2rem;position:relative}
-.card.popular{border-color:${ctx.color.primary};box-shadow:0 8px 30px ${ctx.color.primary}22;transform:scale(1.03)}
-.pop-badge{position:absolute;top:-14px;left:50%;transform:translateX(-50%);background:${ctx.color.gradient};color:#fff;padding:.3rem 1.2rem;border-radius:50px;font-size:.8rem;font-weight:600}
-.card h3{font-size:1.15rem;font-weight:700;margin-bottom:.4rem}
-.card .price{font-size:3rem;font-weight:800;margin:.8rem 0}
-.card .price span{font-size:1rem;color:#94a3b8;font-weight:500}
-.card .price-desc{color:#64748b;font-size:.9rem;margin-bottom:1.5rem}
-.card ul{list-style:none;margin-bottom:2rem}
-.card ul li{padding:.45rem 0;font-size:.92rem;color:#475569}
-.card ul li::before{content:'✓';color:${ctx.color.primary};font-weight:700;margin-right:.5rem}
-.card .card-btn{display:block;text-align:center;padding:.8rem;border-radius:10px;font-weight:600;text-decoration:none;font-size:.95rem;border:2px solid ${ctx.color.primary};color:${ctx.color.primary};transition:.2s}
-.card.popular .card-btn{background:${ctx.color.gradient};color:#fff;border-color:transparent}
-.faq{max-width:700px;margin:0 auto;padding:3rem 4% 5rem}
-.faq h2{text-align:center;font-size:2rem;font-weight:800;margin-bottom:2rem}
-.faq-item{border-bottom:1px solid #e2e8f0;padding:1.2rem 0}
-.faq-item h4{font-weight:600;margin-bottom:.5rem}
-.faq-item p{color:#64748b;font-size:.92rem;line-height:1.6}
-footer{padding:2rem 4%;text-align:center;color:#94a3b8;font-size:.85rem;border-top:1px solid #e2e8f0}
-</style></head><body>
-<nav><div class="logo">${ctx.name}</div><ul><li><a href="#">Features</a></li><li><a href="#">Pricing</a></li><li><a href="#">About</a></li></ul><a href="#" class="cta-nav">Get Started</a></nav>
-<section class="pricing-hero">
-  <h1>Simple, transparent <span>pricing</span></h1>
-  <p>No hidden fees. Cancel anytime. Start with a free trial on any plan.</p>
-  <div class="toggle"><span class="active">Monthly</span><div class="toggle-switch"></div><span>Annually <b style="color:${ctx.color.primary}">(-20%)</b></span></div>
-</section>
-<section class="cards">
-  <div class="card">
-    <h3>Starter</h3>
-    <div class="price">$19<span>/mo</span></div>
-    <p class="price-desc">Perfect for individuals and small projects.</p>
-    <ul><li>Up to 5 projects</li><li>5 GB storage</li><li>Basic analytics</li><li>Email support</li><li>API access</li></ul>
-    <a href="#" class="card-btn">Get Started</a>
-  </div>
-  <div class="card popular">
-    <div class="pop-badge">Most Popular</div>
-    <h3>Professional</h3>
-    <div class="price">$49<span>/mo</span></div>
-    <p class="price-desc">Best for growing teams and businesses.</p>
-    <ul><li>Unlimited projects</li><li>50 GB storage</li><li>Advanced analytics</li><li>Priority support</li><li>API access</li><li>Team collaboration</li><li>Custom integrations</li></ul>
-    <a href="#" class="card-btn">Get Started</a>
-  </div>
-  <div class="card">
-    <h3>Enterprise</h3>
-    <div class="price">$149<span>/mo</span></div>
-    <p class="price-desc">For large organizations with advanced needs.</p>
-    <ul><li>Everything in Pro</li><li>Unlimited storage</li><li>SSO & SAML</li><li>Dedicated account manager</li><li>Custom SLA</li><li>On-premise deployment</li></ul>
-    <a href="#" class="card-btn">Contact Sales</a>
-  </div>
-</section>
-<section class="faq">
-  <h2>Frequently Asked Questions</h2>
-  <div class="faq-item"><h4>Can I change plans later?</h4><p>Yes, you can upgrade or downgrade your plan at any time. Changes take effect at the start of your next billing cycle.</p></div>
-  <div class="faq-item"><h4>Is there a free trial?</h4><p>Every plan comes with a 14-day free trial. No credit card required to get started.</p></div>
-  <div class="faq-item"><h4>What payment methods do you accept?</h4><p>We accept all major credit cards, PayPal, and wire transfers for Enterprise plans.</p></div>
-  <div class="faq-item"><h4>Can I cancel anytime?</h4><p>Absolutely. There are no long-term contracts. Cancel anytime from your account settings.</p></div>
-</section>
-<footer>© 2026 ${ctx.name}. All rights reserved.</footer>
-</body></html>`;
-}
-
-function generateDashboardPage(ctx) {
-  return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;color:#1e293b;background:#f1f5f9;display:flex;min-height:100vh}
-.sidebar{width:250px;background:#fff;border-right:1px solid #e2e8f0;padding:1.5rem 1rem;display:flex;flex-direction:column;position:fixed;top:0;bottom:0}
-.sidebar .logo{font-size:1.3rem;font-weight:800;color:${ctx.color.primary};padding:0 .5rem;margin-bottom:2rem}
-.nav-group{margin-bottom:1.5rem}
-.nav-group .label{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;padding:0 .8rem;margin-bottom:.5rem;font-weight:600}
-.nav-item{display:flex;align-items:center;gap:.7rem;padding:.6rem .8rem;border-radius:8px;color:#64748b;font-size:.9rem;cursor:pointer;text-decoration:none;margin-bottom:.15rem}
-.nav-item:hover{background:#f8fafc}
-.nav-item.active{background:${ctx.color.light};color:${ctx.color.primary};font-weight:600}
-.sidebar-bottom{margin-top:auto;padding:.8rem;border-top:1px solid #e2e8f0;display:flex;align-items:center;gap:.7rem}
-.avatar{width:34px;height:34px;background:${ctx.color.gradient};border-radius:50%;flex-shrink:0}
-.avatar-info .name{font-size:.85rem;font-weight:600}
-.avatar-info .email{font-size:.75rem;color:#94a3b8}
-
-.main{margin-left:250px;flex:1;padding:2rem}
-.top-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:2rem}
-.top-bar h1{font-size:1.6rem;font-weight:700}
-.top-actions{display:flex;gap:.8rem}
-.top-actions .search{padding:.55rem 1rem;border:1px solid #e2e8f0;border-radius:8px;font-size:.85rem;width:220px;background:#fff;color:#1e293b}
-.top-actions .btn-add{padding:.55rem 1.2rem;background:${ctx.color.gradient};color:#fff;border:none;border-radius:8px;font-weight:600;font-size:.85rem;cursor:pointer}
-
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1.2rem;margin-bottom:2rem}
-.stat-card{background:#fff;border-radius:12px;padding:1.4rem;border:1px solid #e2e8f0}
-.stat-card .stat-label{font-size:.8rem;color:#94a3b8;margin-bottom:.3rem;font-weight:500}
-.stat-card .stat-value{font-size:1.8rem;font-weight:700}
-.stat-card .stat-change{font-size:.78rem;margin-top:.3rem}
-.stat-change.up{color:#10b981}
-.stat-change.down{color:#ef4444}
-
-.panels{display:grid;grid-template-columns:2fr 1fr;gap:1.2rem}
-.panel{background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:1.4rem}
-.panel h3{font-size:1rem;font-weight:600;margin-bottom:1rem}
-.chart-placeholder{height:200px;display:flex;align-items:flex-end;gap:8px;padding-top:1rem}
-.chart-placeholder .bar{flex:1;background:${ctx.color.gradient};border-radius:5px 5px 0 0;opacity:.7;transition:.2s}
-.chart-placeholder .bar:hover{opacity:1}
-
-.table-wrap{overflow-x:auto}
-table{width:100%;border-collapse:collapse;font-size:.85rem}
-th{text-align:left;padding:.7rem .8rem;color:#94a3b8;font-weight:600;font-size:.78rem;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid #e2e8f0}
-td{padding:.7rem .8rem;border-bottom:1px solid #f1f5f9}
-.status{padding:.2rem .7rem;border-radius:50px;font-size:.75rem;font-weight:600}
-.status.active{background:#ecfdf5;color:#10b981}
-.status.pending{background:#fffbeb;color:#f59e0b}
-.status.inactive{background:#fef2f2;color:#ef4444}
-
-.activity-list{display:flex;flex-direction:column;gap:.8rem}
-.act-item{display:flex;align-items:flex-start;gap:.8rem}
-.act-dot{width:8px;height:8px;border-radius:50%;background:${ctx.color.primary};margin-top:6px;flex-shrink:0}
-.act-item p{font-size:.85rem;color:#475569;line-height:1.4}
-.act-item .act-time{font-size:.75rem;color:#94a3b8}
-</style></head><body>
-<aside class="sidebar">
-  <div class="logo">${ctx.name}</div>
-  <div class="nav-group">
-    <div class="label">Main</div>
-    <a class="nav-item active" href="#">📊 Dashboard</a>
-    <a class="nav-item" href="#">📁 Projects</a>
-    <a class="nav-item" href="#">👥 Team</a>
-    <a class="nav-item" href="#">📈 Analytics</a>
-  </div>
-  <div class="nav-group">
-    <div class="label">Manage</div>
-    <a class="nav-item" href="#">⚙️ Settings</a>
-    <a class="nav-item" href="#">🔗 Integrations</a>
-    <a class="nav-item" href="#">💳 Billing</a>
-  </div>
-  <div class="sidebar-bottom">
-    <div class="avatar"></div>
-    <div class="avatar-info"><div class="name">John Doe</div><div class="email">john@company.com</div></div>
-  </div>
-</aside>
-<main class="main">
-  <div class="top-bar">
-    <h1>Dashboard</h1>
-    <div class="top-actions">
-      <input class="search" placeholder="Search…" />
-      <button class="btn-add">+ New Project</button>
-    </div>
-  </div>
-  <div class="stats">
-    <div class="stat-card"><div class="stat-label">Total Revenue</div><div class="stat-value">$48,574</div><div class="stat-change up">↑ 12.5% vs last month</div></div>
-    <div class="stat-card"><div class="stat-label">Active Users</div><div class="stat-value">2,847</div><div class="stat-change up">↑ 8.2% vs last month</div></div>
-    <div class="stat-card"><div class="stat-label">Conversion Rate</div><div class="stat-value">3.24%</div><div class="stat-change up">↑ 1.1% vs last month</div></div>
-    <div class="stat-card"><div class="stat-label">Avg. Response</div><div class="stat-value">1.2s</div><div class="stat-change down">↓ 0.3s vs last month</div></div>
-  </div>
-  <div class="panels">
-    <div class="panel">
-      <h3>Revenue Overview</h3>
-      <div class="chart-placeholder">
-        ${[40,65,45,80,55,90,70,85,50,75,95,60].map(h => `<div class="bar" style="height:${h}%"></div>`).join('')}
-      </div>
-    </div>
-    <div class="panel">
-      <h3>Recent Activity</h3>
-      <div class="activity-list">
-        <div class="act-item"><div class="act-dot"></div><div><p>New user <b>Sarah Miller</b> signed up</p><div class="act-time">2 min ago</div></div></div>
-        <div class="act-item"><div class="act-dot"></div><div><p>Project <b>Q1 Launch</b> was completed</p><div class="act-time">15 min ago</div></div></div>
-        <div class="act-item"><div class="act-dot"></div><div><p>Invoice <b>#1042</b> paid — $2,400</p><div class="act-time">1 hour ago</div></div></div>
-        <div class="act-item"><div class="act-dot"></div><div><p>Team <b>Engineering</b> added 3 members</p><div class="act-time">3 hours ago</div></div></div>
-        <div class="act-item"><div class="act-dot"></div><div><p>System update deployed to <b>v2.4.1</b></p><div class="act-time">5 hours ago</div></div></div>
-      </div>
-    </div>
-  </div>
-  <div class="panel" style="margin-top:1.2rem">
-    <h3>Recent Projects</h3>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>Project</th><th>Status</th><th>Team</th><th>Progress</th><th>Due Date</th></tr></thead>
-        <tbody>
-          <tr><td><b>Website Redesign</b></td><td><span class="status active">Active</span></td><td>Design</td><td>85%</td><td>Feb 15, 2026</td></tr>
-          <tr><td><b>Mobile App v2</b></td><td><span class="status active">Active</span></td><td>Engineering</td><td>62%</td><td>Mar 1, 2026</td></tr>
-          <tr><td><b>API Integration</b></td><td><span class="status pending">Pending</span></td><td>Backend</td><td>30%</td><td>Mar 20, 2026</td></tr>
-          <tr><td><b>Analytics Dashboard</b></td><td><span class="status active">Active</span></td><td>Data</td><td>91%</td><td>Feb 8, 2026</td></tr>
-          <tr><td><b>Legacy Migration</b></td><td><span class="status inactive">Paused</span></td><td>DevOps</td><td>15%</td><td>Apr 10, 2026</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-</main>
-</body></html>`;
-}
-
-function generateLoginPage(ctx) {
-  return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;min-height:100vh;display:flex;background:#f8fafc}
-.left{flex:1;display:flex;align-items:center;justify-content:center;padding:2rem}
-.login-card{width:100%;max-width:420px}
-.login-card .logo{font-size:1.6rem;font-weight:800;color:${ctx.color.primary};margin-bottom:2.5rem}
-.login-card h1{font-size:1.8rem;font-weight:700;margin-bottom:.4rem}
-.login-card p.sub{color:#64748b;margin-bottom:2rem;font-size:.95rem}
-.social-btns{display:flex;gap:.8rem;margin-bottom:1.5rem}
-.social-btn{flex:1;padding:.7rem;border:1px solid #e2e8f0;border-radius:10px;background:#fff;cursor:pointer;font-size:.9rem;font-weight:500;color:#475569;display:flex;align-items:center;justify-content:center;gap:.5rem}
-.divider{display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem}
-.divider::before,.divider::after{content:'';flex:1;height:1px;background:#e2e8f0}
-.divider span{color:#94a3b8;font-size:.82rem}
-label{display:block;font-size:.85rem;font-weight:600;margin-bottom:.4rem;color:#475569}
-input[type="email"],input[type="password"]{width:100%;padding:.75rem 1rem;border:1px solid #e2e8f0;border-radius:10px;font-size:.92rem;margin-bottom:1rem;background:#fff;color:#1e293b}
-input:focus{outline:none;border-color:${ctx.color.primary};box-shadow:0 0 0 3px ${ctx.color.primary}22}
-.options{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;font-size:.85rem}
-.options a{color:${ctx.color.primary};text-decoration:none;font-weight:500}
-.options label{display:flex;align-items:center;gap:.4rem;cursor:pointer;font-weight:500;margin-bottom:0}
-.submit-btn{width:100%;padding:.85rem;background:${ctx.color.gradient};color:#fff;border:none;border-radius:10px;font-size:1rem;font-weight:600;cursor:pointer}
-.signup-link{text-align:center;margin-top:1.5rem;font-size:.9rem;color:#64748b}
-.signup-link a{color:${ctx.color.primary};text-decoration:none;font-weight:600}
-.right{flex:1;background:${ctx.color.gradient};display:flex;align-items:center;justify-content:center;padding:3rem;position:relative;overflow:hidden}
-.right::before{content:'';position:absolute;width:500px;height:500px;background:rgba(255,255,255,.08);border-radius:50%;top:-100px;right:-100px}
-.right::after{content:'';position:absolute;width:300px;height:300px;background:rgba(255,255,255,.05);border-radius:50%;bottom:-50px;left:-50px}
-.right-content{position:relative;z-index:1;color:#fff;max-width:400px}
-.right-content h2{font-size:2.2rem;font-weight:800;margin-bottom:1rem;line-height:1.2}
-.right-content p{opacity:.85;font-size:1.05rem;line-height:1.6;margin-bottom:2rem}
-.testimonial{background:rgba(255,255,255,.15);backdrop-filter:blur(10px);border-radius:14px;padding:1.5rem}
-.testimonial p{font-size:.92rem;font-style:italic;opacity:.95;margin-bottom:.8rem}
-.testimonial .author{display:flex;align-items:center;gap:.7rem}
-.testimonial .author-avatar{width:36px;height:36px;background:rgba(255,255,255,.3);border-radius:50%}
-.testimonial .author-name{font-weight:600;font-size:.85rem}
-.testimonial .author-role{font-size:.78rem;opacity:.7}
-</style></head><body>
-<div class="left">
-  <div class="login-card">
-    <div class="logo">${ctx.name}</div>
-    <h1>Welcome back</h1>
-    <p class="sub">Enter your credentials to access your account.</p>
-    <div class="social-btns">
-      <button class="social-btn">🔵 Google</button>
-      <button class="social-btn">⚫ GitHub</button>
-    </div>
-    <div class="divider"><span>or continue with email</span></div>
-    <label>Email address</label>
-    <input type="email" placeholder="john@company.com" />
-    <label>Password</label>
-    <input type="password" placeholder="••••••••" />
-    <div class="options">
-      <label><input type="checkbox" /> Remember me</label>
-      <a href="#">Forgot password?</a>
-    </div>
-    <button class="submit-btn">Sign In</button>
-    <p class="signup-link">Don't have an account? <a href="#">Sign up</a></p>
-  </div>
-</div>
-<div class="right">
-  <div class="right-content">
-    <h2>Start building something amazing</h2>
-    <p>Join thousands of teams using ${ctx.name} to streamline their workflows and boost productivity.</p>
-    <div class="testimonial">
-      <p>"${ctx.name} has completely transformed how our team works. We've seen a 40% increase in productivity since switching."</p>
-      <div class="author">
-        <div class="author-avatar"></div>
-        <div><div class="author-name">Sarah Chen</div><div class="author-role">CTO, TechCorp</div></div>
-      </div>
-    </div>
-  </div>
-</div>
-</body></html>`;
-}
-
-// ── Main Logic ──
 let pages = [];
 let currentPage = 0;
 
-function generate() {
-  const idea = document.getElementById('idea-input').value.trim();
-  if (!idea) return;
+function showError(msg) {
+  const box = document.getElementById('error-box');
+  box.textContent = msg;
+  box.style.display = 'block';
+}
 
+function hideError() {
+  document.getElementById('error-box').style.display = 'none';
+}
+
+async function callAnthropic(apiKey, messages, systemPrompt) {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 16000,
+      system: systemPrompt,
+      messages: messages
+    })
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message || `API error ${res.status}`);
+  }
+
+  const data = await res.json();
+  return data.content[0].text;
+}
+
+async function generate() {
+  const apiKey = document.getElementById('api-key-input').value.trim();
+  const idea = document.getElementById('idea-input').value.trim();
+
+  hideError();
+
+  if (!apiKey) { showError('Please enter your Anthropic API key.'); return; }
+  if (!idea) { showError('Please describe your SaaS idea.'); return; }
+
+  document.getElementById('generate-btn').disabled = true;
   document.getElementById('input-screen').style.display = 'none';
   document.getElementById('loading').style.display = 'flex';
 
-  const ctx = {
-    name: extractAppName(idea),
-    color: extractColor(idea),
-    features: extractFeatures(idea),
-    description: extractDescription(idea),
-    idea: idea
-  };
-
-  // Simulate generation delay
   const loadingText = document.getElementById('loading-text');
-  const steps = ['Analyzing your idea…', 'Designing landing page…', 'Building dashboard…', 'Creating pricing page…', 'Finalizing mockups…'];
-  let step = 0;
-  const interval = setInterval(() => {
-    step++;
-    if (step < steps.length) loadingText.textContent = steps[step];
-  }, 500);
+  const pageProgress = document.getElementById('page-progress');
 
-  setTimeout(() => {
-    clearInterval(interval);
+  try {
+    // Step 1: Ask Claude which pages to generate and the design direction
+    loadingText.textContent = 'Planning pages & design direction…';
+    pageProgress.textContent = '';
 
-    pages = [
-      { name: 'Landing Page', html: generateLandingPage(ctx) },
-      { name: 'Dashboard', html: generateDashboardPage(ctx) },
-      { name: 'Pricing', html: generatePricingPage(ctx) },
-      { name: 'Login', html: generateLoginPage(ctx) },
-    ];
+    const planResponse = await callAnthropic(apiKey, [
+      {
+        role: 'user',
+        content: `SaaS idea: "${idea}"
 
-    document.getElementById('app-title').textContent = ctx.name + ' — Page Mockups';
+Decide which pages are most important for this specific SaaS app. Pick 3-5 pages that best represent the product (e.g. landing page, dashboard, specific feature pages, pricing, onboarding, settings — whatever makes sense for THIS idea).
+
+Also decide on a distinctive visual identity:
+- A creative app name
+- A unique color palette (avoid purple/indigo gradients — think outside the box)
+- A distinctive typography pairing from Google Fonts (avoid Inter, Roboto, Space Grotesk, DM Sans)
+- An overall aesthetic direction (e.g. brutalist, editorial, neo-retro, minimal Japanese, warm craft, cyberpunk dashboard, etc.)
+
+Respond in this exact JSON format only, no other text:
+{
+  "appName": "...",
+  "pages": ["Page Name 1", "Page Name 2", ...],
+  "designDirection": "Brief description of the visual identity, colors, fonts, and aesthetic to use consistently across all pages"
+}`
+      }
+    ], SYSTEM_PROMPT);
+
+    let plan;
+    try {
+      // Extract JSON from response (handle potential markdown wrapping)
+      const jsonMatch = planResponse.match(/\{[\s\S]*\}/);
+      plan = JSON.parse(jsonMatch ? jsonMatch[0] : planResponse);
+    } catch (e) {
+      throw new Error('Failed to parse plan from AI. Please try again.');
+    }
+
+    const appName = plan.appName || 'SaaSApp';
+    const pageList = plan.pages || ['Landing Page', 'Dashboard', 'Pricing'];
+    const designDirection = plan.designDirection || '';
+
+    document.getElementById('app-title').textContent = appName + ' — Page Mockups';
+
+    // Step 2: Generate each page sequentially so design stays consistent
+    pages = [];
+    const generatedDescriptions = [];
+
+    for (let i = 0; i < pageList.length; i++) {
+      const pageName = pageList[i];
+      loadingText.textContent = `Generating ${pageName}…`;
+      pageProgress.textContent = `Page ${i + 1} of ${pageList.length}`;
+
+      const contextMessages = [
+        {
+          role: 'user',
+          content: `SaaS idea: "${idea}"
+App name: "${appName}"
+Design direction: ${designDirection}
+
+${generatedDescriptions.length > 0 ? `Previously generated pages (maintain consistent design language):\n${generatedDescriptions.map((d, j) => `- ${d}`).join('\n')}\n\n` : ''}Generate the "${pageName}" page as a complete, standalone HTML document.
+
+Requirements:
+- Complete <!DOCTYPE html> document with all CSS embedded in <style> tags
+- Import Google Fonts via <link> tags in the <head>
+- Realistic, contextually appropriate placeholder content
+- Designed at 1440px wide desktop viewport
+- The page should look like a real product screenshot
+- Maintain the same fonts, color palette, and design language as specified in the design direction
+${generatedDescriptions.length > 0 ? '- Must feel like it belongs to the same app as the previously generated pages' : ''}
+
+Return ONLY the raw HTML. No markdown fences, no explanation.`
+        }
+      ];
+
+      const html = await callAnthropic(apiKey, contextMessages, SYSTEM_PROMPT);
+
+      // Clean up any markdown fences if present
+      let cleanHtml = html.trim();
+      if (cleanHtml.startsWith('```')) {
+        cleanHtml = cleanHtml.replace(/^```html?\n?/, '').replace(/\n?```$/, '');
+      }
+
+      pages.push({ name: pageName, html: cleanHtml });
+      generatedDescriptions.push(`${pageName}: generated with consistent ${appName} branding`);
+    }
+
+    // Step 3: Show results
     renderTabs();
     showPage(0);
 
     document.getElementById('loading').style.display = 'none';
     document.getElementById('output-screen').style.display = 'block';
-  }, 2500);
+
+  } catch (err) {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('input-screen').style.display = 'flex';
+    document.getElementById('generate-btn').disabled = false;
+    showError(err.message);
+  }
 }
 
 function renderTabs() {
