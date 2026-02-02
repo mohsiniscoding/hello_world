@@ -357,21 +357,27 @@ Return ONLY the customized aesthetics prompt as plain text (no JSON, no markdown
     loadingText.textContent = 'Planning pages…';
     pageProgress.textContent = 'Step 2 of 3';
 
-    const PAGE_SYSTEM = `You are a SaaS product strategist. You decide which pages best represent a product for marketing screenshots.`;
+    const PAGE_SYSTEM = `You are a SaaS product strategist specializing in portfolio presentation. You select pages that will impress potential clients viewing a developer/designer's portfolio. The screenshots need to demonstrate technical skill, design taste, and product thinking.`;
 
     const planResponse = await callAnthropic(apiKey, [
       {
         role: 'user',
         content: `SaaS idea: "${idea}"
 
-Pick the 3 to 5 most important pages that best represent this specific SaaS product for screenshot mockups. Choose pages that make sense for THIS idea — e.g. a CRM might need a contacts page, a scheduling tool needs a calendar view, a finance app needs a transactions ledger, etc. Always include a landing/marketing page. Pick what is most impactful for showcasing this product.
+These page mockups will be used as portfolio screenshots to attract potential clients. Pick 3 to 5 pages that are the most visually impressive and demonstrate strong product design.
+
+Rules:
+- The FIRST page MUST always be "Landing Page" — this is the hero piece of any portfolio showcase
+- The remaining 2-4 pages should be the most interesting, data-rich, or visually complex pages for THIS specific SaaS — things like dashboards with charts, detailed feature views, rich data tables, calendar/scheduling views, analytics screens, etc.
+- Avoid boring pages like plain settings, empty states, or simple forms — pick pages that wow a client when they see the screenshot
+- Choose pages specific to THIS product's domain (e.g. a fitness app needs a workout tracker view, a finance app needs a portfolio/transactions screen)
 
 Also invent a creative, memorable app name for this product.
 
 Respond in this exact JSON format only, no other text:
 {
   "appName": "...",
-  "pages": ["Page Name 1", "Page Name 2", ...]
+  "pages": ["Landing Page", "Page Name 2", ...]
 }`
       }
     ], PAGE_SYSTEM, 1000);
@@ -386,9 +392,18 @@ Respond in this exact JSON format only, no other text:
 
     const appName = plan.appName || 'SaaSApp';
     const pageList = (plan.pages || ['Landing Page', 'Dashboard', 'Pricing']).slice(0, 5);
-    if (pageList.length < 3) {
-      while (pageList.length < 3) pageList.push(['Dashboard', 'Pricing', 'Settings'][pageList.length]);
+    // Ensure Landing Page is always first
+    if (!pageList[0]?.toLowerCase().includes('landing')) {
+      const idx = pageList.findIndex(p => p.toLowerCase().includes('landing'));
+      if (idx > 0) { const lp = pageList.splice(idx, 1)[0]; pageList.unshift(lp); }
+      else pageList.unshift('Landing Page');
     }
+    // Enforce 3-5 range
+    if (pageList.length < 3) {
+      const fillers = ['Dashboard', 'Pricing'];
+      for (const f of fillers) { if (pageList.length >= 3) break; if (!pageList.includes(f)) pageList.push(f); }
+    }
+    if (pageList.length > 5) pageList.length = 5;
 
     document.getElementById('app-title').textContent = appName + ' — Page Mockups';
 
@@ -399,13 +414,16 @@ Follow this design specification EXACTLY:
 
 ${customizedAestheticsPrompt}
 
+CONTEXT: These mockups will be used as portfolio screenshots to impress potential clients. They must look like real, polished, shipped products — not student projects or templates.
+
 CRITICAL RULES:
 1. Return ONLY the raw HTML. No markdown, no code fences, no explanation.
 2. Each page must be a complete standalone HTML document with embedded CSS and Google Fonts imports via <link> tags.
-3. Use realistic placeholder data (names, numbers, dates, etc.) that matches the SaaS context.
+3. Use realistic placeholder data (names, numbers, dates, etc.) that matches the SaaS context. Fill every section with convincing content — no "lorem ipsum" or empty placeholders.
 4. Pages are static visual mockups — no JavaScript needed, no functionality.
-5. Make the design feel like a real shipped product, not a template.
-6. Every page must share the SAME design language — same fonts, same CSS variables, same color palette, same spacing and border-radius conventions.`;
+5. Make the design feel like a real shipped product that a well-funded startup would have.
+6. Every page must share the SAME design language — same fonts, same CSS variables, same color palette, same spacing and border-radius conventions.
+7. Pages should be DENSE with content and visual detail — data-rich dashboards, populated tables, filled-out cards, realistic charts (use CSS/SVG). Empty-looking pages are unacceptable for portfolio use.`;
 
     pages = [];
     const generatedDescriptions = [];
@@ -423,13 +441,17 @@ App name: "${appName}"
 
 ${generatedDescriptions.length > 0 ? `Previously generated pages (you MUST maintain the exact same design language — same fonts, colors, CSS variables, spacing):\n${generatedDescriptions.join('\n')}\n\n` : ''}Generate the "${pageName}" page as a complete, standalone HTML document.
 
+This will be used as a portfolio screenshot to win client projects. It MUST look impressive.
+
 Requirements:
 - Complete <!DOCTYPE html> document with all CSS embedded in <style> tags
 - Import Google Fonts via <link> tags in the <head>
 - Use the EXACT CSS variables, fonts, and color palette from the design specification in your system prompt
-- Realistic, contextually appropriate placeholder content for a ${pageName.toLowerCase()}
+- DENSE, realistic content — fill every section with convincing placeholder data (real-sounding names, plausible numbers, realistic dates). No empty sections or lorem ipsum.
 - Designed at 1440px wide desktop viewport
-- The page must look like a screenshot of a real, shipped product
+- Must look like a screenshot of a real product built by a top-tier design agency
+- For dashboards/data pages: include populated charts (CSS/SVG), filled tables, stat cards with real numbers, activity feeds
+- For landing pages: include hero, features, social proof with company names, testimonials, CTA sections
 ${generatedDescriptions.length > 0 ? '- MUST use the same CSS variables, fonts, and design tokens as previous pages' : ''}
 
 Return ONLY the raw HTML. No markdown fences, no explanation.`
