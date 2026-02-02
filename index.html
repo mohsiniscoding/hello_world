@@ -251,7 +251,7 @@
 </div>
 
 <script>
-const AESTHETICS_PROMPT = `You tend to converge toward generic, "on distribution" outputs. In frontend design, this creates what users call the "AI slop" aesthetic. Avoid this: make creative, distinctive frontends that surprise and delight. Focus on:
+const BASE_AESTHETICS_PROMPT = `You tend to converge toward generic, "on distribution" outputs. In frontend design, this creates what users call the "AI slop" aesthetic. Avoid this: make creative, distinctive frontends that surprise and delight. Focus on:
 
 Typography: Choose fonts that are beautiful, unique, and interesting. Use Google Fonts imports. Avoid generic fonts like Arial, Inter, Roboto; opt instead for distinctive choices that elevate the frontend's aesthetics.
 
@@ -269,18 +269,6 @@ Avoid generic AI-generated aesthetics:
 
 Interpret creatively and make unexpected choices that feel genuinely designed for the context. Vary between light and dark themes, different fonts, different aesthetics. Think outside the box!`;
 
-const SYSTEM_PROMPT = `You are an expert frontend designer who creates production-ready HTML/CSS page mockups for SaaS applications. Your pages are meant to be used as screenshot material — they must look polished, realistic, and visually striking.
-
-${AESTHETICS_PROMPT}
-
-CRITICAL RULES:
-1. Return ONLY the raw HTML. No markdown, no code fences, no explanation.
-2. Each page must be a complete standalone HTML document with embedded CSS and Google Fonts imports.
-3. Use realistic placeholder data (names, numbers, dates, etc.) that matches the SaaS context.
-4. Pages are static visual mockups — no JavaScript needed, no functionality.
-5. Make the design feel like a real product, not a template.
-6. Every page for the SAME app must share a consistent design language (same fonts, colors, spacing conventions) while being contextually different.`;
-
 let pages = [];
 let currentPage = 0;
 
@@ -294,7 +282,7 @@ function hideError() {
   document.getElementById('error-box').style.display = 'none';
 }
 
-async function callAnthropic(apiKey, messages, systemPrompt) {
+async function callAnthropic(apiKey, messages, systemPrompt, maxTokens = 16000) {
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -305,7 +293,7 @@ async function callAnthropic(apiKey, messages, systemPrompt) {
     },
     body: JSON.stringify({
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 16000,
+      max_tokens: maxTokens,
       system: systemPrompt,
       messages: messages
     })
@@ -337,91 +325,129 @@ async function generate() {
   const pageProgress = document.getElementById('page-progress');
 
   try {
-    // Step 1: Ask Claude which pages to generate and the design direction
-    loadingText.textContent = 'Planning pages & design direction…';
-    pageProgress.textContent = '';
+    // ── Step 1: Customize the aesthetics prompt for this specific SaaS idea ──
+    loadingText.textContent = 'Crafting a unique design identity…';
+    pageProgress.textContent = 'Step 1 of 3';
+
+    const customAestheticsResponse = await callAnthropic(apiKey, [
+      {
+        role: 'user',
+        content: `I have a SaaS app idea:
+"${idea}"
+
+Below is a generic frontend aesthetics guide. Your job is to CUSTOMIZE it specifically for this SaaS idea. Produce a tailored version that:
+- Picks specific Google Fonts that match the mood/industry of this SaaS (give exact font names)
+- Defines a specific color palette with exact hex codes (primary, secondary, accent, background, text colors) that feels right for this domain
+- Chooses a specific aesthetic direction (not generic — something like "warm editorial with craft textures" or "clinical Swiss design with mint accents" or "dark observatory dashboard with amber data-glow") that suits this product
+- Specifies exact CSS variable definitions to use
+- Describes the specific mood, spacing rhythm, border-radius style, and shadow approach
+- Describes specific background treatments (gradients, patterns, textures) to use
+
+Here is the base guide to customize:
+
+${BASE_AESTHETICS_PROMPT}
+
+Return ONLY the customized aesthetics prompt as plain text (no JSON, no markdown fences). It should be a self-contained design specification document that another AI can follow to build consistent pages.`
+      }
+    ], 'You are an elite brand designer and creative director. You create distinctive, memorable visual identities for digital products. You never default to safe, generic choices — you make bold, cohesive decisions that feel intentional and unique to each product.', 4000);
+
+    const customizedAestheticsPrompt = customAestheticsResponse.trim();
+
+    // ── Step 2: Plan which pages to generate ──
+    loadingText.textContent = 'Planning pages…';
+    pageProgress.textContent = 'Step 2 of 3';
+
+    const PAGE_SYSTEM = `You are a SaaS product strategist. You decide which pages best represent a product for marketing screenshots.`;
 
     const planResponse = await callAnthropic(apiKey, [
       {
         role: 'user',
         content: `SaaS idea: "${idea}"
 
-Decide which pages are most important for this specific SaaS app. Pick 3-5 pages that best represent the product (e.g. landing page, dashboard, specific feature pages, pricing, onboarding, settings — whatever makes sense for THIS idea).
+Pick the 3 to 5 most important pages that best represent this specific SaaS product for screenshot mockups. Choose pages that make sense for THIS idea — e.g. a CRM might need a contacts page, a scheduling tool needs a calendar view, a finance app needs a transactions ledger, etc. Always include a landing/marketing page. Pick what is most impactful for showcasing this product.
 
-Also decide on a distinctive visual identity:
-- A creative app name
-- A unique color palette (avoid purple/indigo gradients — think outside the box)
-- A distinctive typography pairing from Google Fonts (avoid Inter, Roboto, Space Grotesk, DM Sans)
-- An overall aesthetic direction (e.g. brutalist, editorial, neo-retro, minimal Japanese, warm craft, cyberpunk dashboard, etc.)
+Also invent a creative, memorable app name for this product.
 
 Respond in this exact JSON format only, no other text:
 {
   "appName": "...",
-  "pages": ["Page Name 1", "Page Name 2", ...],
-  "designDirection": "Brief description of the visual identity, colors, fonts, and aesthetic to use consistently across all pages"
+  "pages": ["Page Name 1", "Page Name 2", ...]
 }`
       }
-    ], SYSTEM_PROMPT);
+    ], PAGE_SYSTEM, 1000);
 
     let plan;
     try {
-      // Extract JSON from response (handle potential markdown wrapping)
       const jsonMatch = planResponse.match(/\{[\s\S]*\}/);
       plan = JSON.parse(jsonMatch ? jsonMatch[0] : planResponse);
     } catch (e) {
-      throw new Error('Failed to parse plan from AI. Please try again.');
+      throw new Error('Failed to parse page plan from AI. Please try again.');
     }
 
     const appName = plan.appName || 'SaaSApp';
-    const pageList = plan.pages || ['Landing Page', 'Dashboard', 'Pricing'];
-    const designDirection = plan.designDirection || '';
+    const pageList = (plan.pages || ['Landing Page', 'Dashboard', 'Pricing']).slice(0, 5);
+    if (pageList.length < 3) {
+      while (pageList.length < 3) pageList.push(['Dashboard', 'Pricing', 'Settings'][pageList.length]);
+    }
 
     document.getElementById('app-title').textContent = appName + ' — Page Mockups';
 
-    // Step 2: Generate each page sequentially so design stays consistent
+    // ── Step 3: Generate each page using the customized aesthetics prompt ──
+    const GENERATION_SYSTEM = `You are an expert frontend developer who creates production-ready HTML/CSS page mockups for SaaS applications. Your pages are meant to be used as screenshot material — they must look polished, realistic, and visually striking.
+
+Follow this design specification EXACTLY:
+
+${customizedAestheticsPrompt}
+
+CRITICAL RULES:
+1. Return ONLY the raw HTML. No markdown, no code fences, no explanation.
+2. Each page must be a complete standalone HTML document with embedded CSS and Google Fonts imports via <link> tags.
+3. Use realistic placeholder data (names, numbers, dates, etc.) that matches the SaaS context.
+4. Pages are static visual mockups — no JavaScript needed, no functionality.
+5. Make the design feel like a real shipped product, not a template.
+6. Every page must share the SAME design language — same fonts, same CSS variables, same color palette, same spacing and border-radius conventions.`;
+
     pages = [];
     const generatedDescriptions = [];
 
     for (let i = 0; i < pageList.length; i++) {
       const pageName = pageList[i];
       loadingText.textContent = `Generating ${pageName}…`;
-      pageProgress.textContent = `Page ${i + 1} of ${pageList.length}`;
+      pageProgress.textContent = `Step 3 of 3 — Page ${i + 1} of ${pageList.length}`;
 
       const contextMessages = [
         {
           role: 'user',
           content: `SaaS idea: "${idea}"
 App name: "${appName}"
-Design direction: ${designDirection}
 
-${generatedDescriptions.length > 0 ? `Previously generated pages (maintain consistent design language):\n${generatedDescriptions.map((d, j) => `- ${d}`).join('\n')}\n\n` : ''}Generate the "${pageName}" page as a complete, standalone HTML document.
+${generatedDescriptions.length > 0 ? `Previously generated pages (you MUST maintain the exact same design language — same fonts, colors, CSS variables, spacing):\n${generatedDescriptions.join('\n')}\n\n` : ''}Generate the "${pageName}" page as a complete, standalone HTML document.
 
 Requirements:
 - Complete <!DOCTYPE html> document with all CSS embedded in <style> tags
 - Import Google Fonts via <link> tags in the <head>
-- Realistic, contextually appropriate placeholder content
+- Use the EXACT CSS variables, fonts, and color palette from the design specification in your system prompt
+- Realistic, contextually appropriate placeholder content for a ${pageName.toLowerCase()}
 - Designed at 1440px wide desktop viewport
-- The page should look like a real product screenshot
-- Maintain the same fonts, color palette, and design language as specified in the design direction
-${generatedDescriptions.length > 0 ? '- Must feel like it belongs to the same app as the previously generated pages' : ''}
+- The page must look like a screenshot of a real, shipped product
+${generatedDescriptions.length > 0 ? '- MUST use the same CSS variables, fonts, and design tokens as previous pages' : ''}
 
 Return ONLY the raw HTML. No markdown fences, no explanation.`
         }
       ];
 
-      const html = await callAnthropic(apiKey, contextMessages, SYSTEM_PROMPT);
+      const html = await callAnthropic(apiKey, contextMessages, GENERATION_SYSTEM);
 
-      // Clean up any markdown fences if present
       let cleanHtml = html.trim();
       if (cleanHtml.startsWith('```')) {
         cleanHtml = cleanHtml.replace(/^```html?\n?/, '').replace(/\n?```$/, '');
       }
 
       pages.push({ name: pageName, html: cleanHtml });
-      generatedDescriptions.push(`${pageName}: generated with consistent ${appName} branding`);
+      generatedDescriptions.push(`- ${pageName}: completed with consistent ${appName} branding and shared design tokens`);
     }
 
-    // Step 3: Show results
+    // Show results
     renderTabs();
     showPage(0);
 
