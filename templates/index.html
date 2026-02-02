@@ -91,7 +91,6 @@
       font-weight: 700;
     }
 
-    .input-label + .input-label { margin-top: 1.2rem; }
     .form-input + .input-label { margin-top: .2rem; }
 
     .generate-btn {
@@ -142,6 +141,155 @@
 
     .loading-screen .status-text { margin-top: 1.2rem; color: var(--text-muted); font-size: .92rem; }
     .loading-screen .progress-text { margin-top: .5rem; color: var(--accent); font-size: .82rem; font-weight: 600; }
+
+    /* ── Variation Picker ── */
+    .picker-screen {
+      min-height: 100vh;
+      background:
+        radial-gradient(ellipse 60% 40% at 50% 0%, #1a1428 0%, transparent 70%),
+        var(--bg);
+      padding: 2rem;
+    }
+
+    .picker-header {
+      text-align: center;
+      padding: 2rem 0 1rem;
+    }
+
+    .picker-header h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem;
+      color: var(--accent);
+      margin-bottom: .4rem;
+    }
+
+    .picker-header p {
+      color: var(--text-muted);
+      font-size: .95rem;
+    }
+
+    .variation-labels {
+      display: flex;
+      justify-content: center;
+      gap: .6rem;
+      margin: 1.5rem auto .8rem;
+      max-width: 1400px;
+      padding: 0 1rem;
+    }
+
+    .variation-label {
+      flex: 1;
+      max-width: 440px;
+      text-align: center;
+      font-size: .75rem;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: var(--text-muted);
+      font-weight: 700;
+    }
+
+    .variations-row {
+      display: flex;
+      gap: .6rem;
+      justify-content: center;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 1rem;
+    }
+
+    .variation-card {
+      flex: 1;
+      max-width: 440px;
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: border-color .2s, transform .2s, box-shadow .2s;
+      background: var(--surface);
+    }
+
+    .variation-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-4px);
+      box-shadow: 0 12px 32px rgba(0,0,0,.4);
+    }
+
+    .variation-card.selected {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px var(--accent), 0 12px 32px rgba(0,0,0,.4);
+    }
+
+    .variation-preview {
+      width: 100%;
+      height: 380px;
+      border: none;
+      pointer-events: none;
+      display: block;
+      background: #fff;
+    }
+
+    .variation-footer {
+      padding: .8rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid var(--border);
+    }
+
+    .variation-footer span {
+      font-size: .82rem;
+      color: var(--text-muted);
+    }
+
+    .select-badge {
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      font-weight: 700;
+      padding: .3rem .8rem;
+      border-radius: 4px;
+      background: var(--accent);
+      color: #0a0a0f;
+      opacity: 0;
+      transition: opacity .2s;
+    }
+
+    .variation-card.selected .select-badge,
+    .variation-card:hover .select-badge {
+      opacity: 1;
+    }
+
+    .picker-actions {
+      text-align: center;
+      padding: 1.5rem 0 3rem;
+    }
+
+    .picker-actions .generate-btn:disabled {
+      opacity: .3;
+    }
+
+    /* placeholder slots while loading */
+    .variation-card.placeholder {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 430px;
+      cursor: default;
+    }
+
+    .variation-card.placeholder:hover {
+      border-color: var(--border);
+      transform: none;
+      box-shadow: none;
+    }
+
+    .mini-spinner {
+      width: 28px; height: 28px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
 
     /* ── Output Screen ── */
     .toolbar {
@@ -241,11 +389,7 @@
         placeholder="e.g. An AI-powered veterinary clinic management platform that handles appointment scheduling, pet medical records, telemedicine consultations, and automated prescription refills..."
       ></textarea>
 
-      <button
-        class="generate-btn"
-        :disabled="generating"
-        @click="generate"
-      >
+      <button class="generate-btn" :disabled="generating" @click="startGeneration">
         Generate Pages
       </button>
 
@@ -257,6 +401,55 @@
       <div class="spinner"></div>
       <p class="status-text">{{ loadingText }}</p>
       <p class="progress-text">{{ progressText }}</p>
+    </div>
+
+    <!-- Variation Picker -->
+    <div v-if="screen === 'picker'" class="picker-screen">
+      <div class="picker-header">
+        <h1>{{ appName }}</h1>
+        <p>Choose a design direction for your pages</p>
+      </div>
+
+      <div class="variation-labels">
+        <div class="variation-label" v-for="(label, i) in variationLabels" :key="i">{{ label }}</div>
+      </div>
+
+      <div class="variations-row">
+        <template v-for="i in 3" :key="i">
+          <!-- Loaded variation -->
+          <div
+            v-if="variations[i - 1]"
+            class="variation-card"
+            :class="{ selected: selectedVariation === i - 1 }"
+            @click="selectedVariation = i - 1"
+          >
+            <iframe
+              class="variation-preview"
+              :ref="el => setVariationRef(el, i - 1)"
+            ></iframe>
+            <div class="variation-footer">
+              <span>Variation {{ i }}</span>
+              <div class="select-badge">{{ selectedVariation === i - 1 ? 'Selected' : 'Select' }}</div>
+            </div>
+          </div>
+          <!-- Placeholder while loading -->
+          <div v-else class="variation-card placeholder">
+            <div class="mini-spinner"></div>
+          </div>
+        </template>
+      </div>
+
+      <div class="picker-actions">
+        <button
+          class="generate-btn"
+          :disabled="selectedVariation === null || generatingPages"
+          @click="confirmVariation"
+        >
+          {{ generatingPages ? 'Generating remaining pages…' : 'Use This Design' }}
+        </button>
+      </div>
+
+      <div v-if="error" class="error-box" style="max-width:1400px;margin:0 auto;">{{ error }}</div>
     </div>
 
     <!-- Output Screen -->
@@ -283,7 +476,7 @@
   </div>
 
   <script>
-    const { createApp, ref, nextTick } = Vue;
+    const { createApp, ref, nextTick, watch } = Vue;
 
     createApp({
       setup() {
@@ -292,31 +485,155 @@
         const idea = ref('');
         const error = ref('');
         const generating = ref(false);
+        const generatingPages = ref(false);
         const loadingText = ref('');
         const progressText = ref('');
+
+        // Plan data
         const appName = ref('');
+        const pageList = ref([]);
+
+        // Variation picker
+        const variations = ref([null, null, null]); // { aesthetics, html }
+        const selectedVariation = ref(null);
+        const variationLabels = ['Dark & Moody', 'Light & Editorial', 'Bold & Colorful'];
+        const variationIframeRefs = [ref(null), ref(null), ref(null)];
+
+        // Output
         const pages = ref([]);
         const currentPage = ref(0);
         const pageIframe = ref(null);
 
-        async function generate() {
+        function setVariationRef(el, index) {
+          variationIframeRefs[index].value = el;
+          if (el && variations.value[index]) {
+            nextTick(() => {
+              try {
+                const doc = el.contentDocument;
+                doc.open();
+                doc.write(variations.value[index].html);
+                doc.close();
+              } catch (e) { /* cross-origin safety */ }
+            });
+          }
+        }
+
+        async function readNDJSON(response, handler) {
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = '';
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop();
+
+            for (const line of lines) {
+              if (!line.trim()) continue;
+              const event = JSON.parse(line);
+              if (event.step === 'error') throw new Error(event.message);
+              handler(event);
+            }
+          }
+        }
+
+        async function startGeneration() {
           error.value = '';
           if (!apiKey.value.trim()) { error.value = 'Please enter your Anthropic API key.'; return; }
           if (!idea.value.trim()) { error.value = 'Please describe your SaaS idea.'; return; }
 
           generating.value = true;
           screen.value = 'loading';
-          loadingText.value = 'Starting…';
+          loadingText.value = 'Planning your app…';
           progressText.value = '';
-          pages.value = [];
+          variations.value = [null, null, null];
+          selectedVariation.value = null;
 
           try {
-            const res = await fetch('/api/generate', {
+            const res = await fetch('/api/variations', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ apiKey: apiKey.value.trim(), idea: idea.value.trim() }),
+            });
+
+            if (!res.ok) {
+              const errData = await res.json().catch(() => ({}));
+              throw new Error(errData.error || `Server error ${res.status}`);
+            }
+
+            let variationsReceived = 0;
+
+            await readNDJSON(res, (event) => {
+              switch (event.step) {
+                case 'planning':
+                  loadingText.value = event.message;
+                  break;
+
+                case 'plan_ready':
+                  appName.value = event.appName;
+                  pageList.value = event.pages;
+                  break;
+
+                case 'generating_variations':
+                  loadingText.value = event.message;
+                  progressText.value = '3 design directions being created in parallel';
+                  break;
+
+                case 'variation_ready':
+                  variations.value[event.index] = {
+                    aesthetics: event.aesthetics,
+                    html: event.html,
+                  };
+                  // Force reactivity
+                  variations.value = [...variations.value];
+                  variationsReceived++;
+                  progressText.value = `${variationsReceived} of 3 variations ready`;
+
+                  // Switch to picker as soon as first variation arrives
+                  if (variationsReceived === 1) {
+                    screen.value = 'picker';
+                  }
+                  break;
+
+                case 'variations_done':
+                  // All done, user can pick
+                  break;
+              }
+            });
+
+          } catch (e) {
+            screen.value = 'input';
+            error.value = e.message;
+          } finally {
+            generating.value = false;
+          }
+        }
+
+        async function confirmVariation() {
+          if (selectedVariation.value === null) return;
+
+          const chosen = variations.value[selectedVariation.value];
+          if (!chosen) return;
+
+          error.value = '';
+          generatingPages.value = true;
+
+          // Start with landing page already in place
+          pages.value = [{ name: 'Landing Page', html: chosen.html }];
+
+          try {
+            const res = await fetch('/api/generate-pages', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 apiKey: apiKey.value.trim(),
                 idea: idea.value.trim(),
+                appName: appName.value,
+                aesthetics: chosen.aesthetics,
+                pages: pageList.value,
               }),
             });
 
@@ -325,63 +642,29 @@
               throw new Error(errData.error || `Server error ${res.status}`);
             }
 
-            const reader = res.body.getReader();
-            const decoder = new TextDecoder();
-            let buffer = '';
+            // Switch to output screen immediately with landing page visible
+            screen.value = 'output';
+            currentPage.value = 0;
+            await nextTick();
+            writeIframe(0);
 
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) break;
-
-              buffer += decoder.decode(value, { stream: true });
-              const lines = buffer.split('\n');
-              buffer = lines.pop();
-
-              for (const line of lines) {
-                if (!line.trim()) continue;
-                const event = JSON.parse(line);
-
-                switch (event.step) {
-                  case 'aesthetics':
-                    loadingText.value = event.message;
-                    progressText.value = 'Step 1 of 3';
-                    break;
-
-                  case 'planning':
-                    loadingText.value = event.message;
-                    progressText.value = 'Step 2 of 3';
-                    break;
-
-                  case 'plan_ready':
-                    appName.value = event.appName;
-                    break;
-
-                  case 'generating':
-                    loadingText.value = event.message;
-                    progressText.value = `Step 3 of 3 — Page ${event.pageIndex + 1} of ${event.totalPages}`;
-                    break;
-
-                  case 'page_ready':
-                    pages.value.push({ name: event.pageName, html: event.html });
-                    break;
-
-                  case 'done':
-                    screen.value = 'output';
-                    currentPage.value = 0;
-                    await nextTick();
-                    writeIframe(0);
-                    break;
-
-                  case 'error':
-                    throw new Error(event.message);
-                }
+            await readNDJSON(res, async (event) => {
+              switch (event.step) {
+                case 'page_ready':
+                  pages.value.push({ name: event.pageName, html: event.html });
+                  break;
+                case 'done':
+                  break;
               }
-            }
+            });
+
           } catch (e) {
-            screen.value = 'input';
             error.value = e.message;
+            if (screen.value !== 'output') {
+              // Stay on picker if we haven't transitioned
+            }
           } finally {
-            generating.value = false;
+            generatingPages.value = false;
           }
         }
 
@@ -405,14 +688,21 @@
           pages.value = [];
           currentPage.value = 0;
           appName.value = '';
+          pageList.value = [];
+          variations.value = [null, null, null];
+          selectedVariation.value = null;
           error.value = '';
+          generatingPages.value = false;
         }
 
         return {
-          screen, apiKey, idea, error, generating,
-          loadingText, progressText, appName,
+          screen, apiKey, idea, error, generating, generatingPages,
+          loadingText, progressText,
+          appName, pageList,
+          variations, selectedVariation, variationLabels,
+          setVariationRef,
           pages, currentPage, pageIframe,
-          generate, showPage, reset,
+          startGeneration, confirmVariation, showPage, reset,
         };
       },
     }).mount('#app');
